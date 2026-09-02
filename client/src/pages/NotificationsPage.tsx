@@ -1,0 +1,13 @@
+import { Link } from "wouter";
+import { Bell, Check, Loader2, MessageCircle, UserPlus, Heart, Share2 } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
+import AppChrome from "@/components/AppChrome";
+
+const labels: Record<string, string> = { follow: "بدأ بمتابعتك", like: "أعجب بعملك", comment: "علّق على عملك", reply: "رد على تعليقك", share: "شارك عملك", message: "أرسل لك رسالة" };
+const icons: Record<string, typeof Bell> = { follow: UserPlus, like: Heart, comment: MessageCircle, reply: MessageCircle, share: Share2, message: MessageCircle };
+export default function NotificationsPage() {
+  // Notification freshness intentionally uses bounded refetchInterval polling; this deployment does not claim WebSocket/SSE realtime.
+  const { data, isLoading, isError } = trpc.notifications.list.useQuery(undefined, { refetchInterval: 5000 }); const read = trpc.notifications.markRead.useMutation({ onSuccess: () => toast.success("تم تحديث الإشعار") });
+  return <AppChrome title="الإشعارات"><div className="container py-8"><div className="max-w-3xl rounded-[1.75rem] border border-neutral-200 bg-white p-4 sm:p-6"><div className="mb-5 flex items-center justify-between"><p className="text-sm text-neutral-500">كل تنبيه هنا مرتبط بتفاعل حقيقي محفوظ في قاعدة البيانات. يتم التحديث تلقائيًا عبر polling كل 5 ثوانٍ.</p><Bell className="h-5 w-5 text-[#c38a10]" /></div>{isLoading ? <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-[#c38a10]" /></div> : isError ? <div className="py-16 text-center text-sm text-red-600">تعذر تحميل الإشعارات. حاول مرة أخرى.</div> : data?.length ? <div className="space-y-2">{data.map(({ notification, actor }) => { const Icon = icons[notification.type] || Bell; return <div key={notification.id} className={`flex items-center gap-3 rounded-2xl p-4 ${notification.isRead ? "bg-white" : "bg-[#fff8df]"}`}><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-neutral-950 text-[#f6c94c]"><Icon className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="text-sm"><Link href={`/profile/${actor.id}`} className="font-bold hover:underline">{actor.name || "مستخدم"}</Link> {labels[notification.type]}</p><p className="mt-1 text-xs text-neutral-400">{new Date(notification.createdAt).toLocaleString("ar-EG")}</p></div>{!notification.isRead && <button onClick={() => read.mutate({ id: notification.id })} className="rounded-xl p-2 text-neutral-400 hover:bg-white" aria-label="تعليم كمقروء"><Check className="h-4 w-4" /></button>}</div> })}</div> : <div className="py-16 text-center text-sm text-neutral-500">لا توجد إشعارات بعد.</div>}</div></div></AppChrome>;
+}

@@ -1,0 +1,89 @@
+import { randomInt } from "node:crypto";
+import { and, desc, eq, or, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/mysql2";
+import { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, type InsertUser } from "../drizzle/schema";
+import { ENV } from "./_core/env";
+
+let _db: ReturnType<typeof drizzle> | null = null;
+export async function getDb() {
+  if (!_db && process.env.DATABASE_URL) {
+    try { _db = drizzle(process.env.DATABASE_URL); } catch (error) { console.warn("[Database] Failed to connect:", error); }
+  }
+  return _db;
+}
+
+export async function upsertUser(user: InsertUser): Promise<void> {
+  if (!user.openId) throw new Error("User openId is required for upsert");
+  const db = await getDb(); if (!db) return;
+  const existing = await getUserByOpenId(user.openId);
+  const values: InsertUser = { openId: user.openId };
+  const updateSet: Record<string, unknown> = {};
+  if (user.openId === ENV.ownerOpenId) {
+    values.publicId = "10000"; updateSet.publicId = "10000";
+  } else if (!existing?.publicId) {
+    let publicId = String(randomInt(10001, 999999));
+    while ((await db.select({ id: users.id }).from(users).where(eq(users.publicId, publicId)).limit(1))[0]) publicId = String(randomInt(10001, 999999));
+    values.publicId = publicId; updateSet.publicId = publicId;
+  }
+  for (const field of ["name", "email", "loginMethod"] as const) {
+    if (user[field] !== undefined) { values[field] = user[field] ?? null; updateSet[field] = user[field] ?? null; }
+  }
+  if (user.role !== undefined || user.openId === ENV.ownerOpenId) { values.role = user.role ?? "admin"; updateSet.role = values.role; }
+  values.lastSignedIn = user.lastSignedIn ?? new Date(); updateSet.lastSignedIn = values.lastSignedIn;
+  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+}
+
+export async function getUserByOpenId(openId: string) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1); return result[0];
+}
+
+export async function getProfile(userId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const [profile] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!profile) return undefined;
+  const [followers, following] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(follows).where(and(eq(follows.followingId, userId), eq(follows.status, "accepted"))),
+    db.select({ count: sql<number>`count(*)` }).from(follows).where(and(eq(follows.followerId, userId), eq(follows.status, "accepted"))),
+  ]);
+  return { ...profile, followersCount: Number(followers[0]?.count ?? 0), followingCount: Number(following[0]?.count ?? 0) };
+}
+
+export async function listFeed(viewerId?: number) {
+  const db = await getDb(); if (!db) return [];
+  const rows = await db.select({ post: posts, author: users }).from(posts).innerJoin(users, eq(posts.authorId, users.id)).orderBy(desc(posts.createdAt)).limit(30);
+  return Promise.all(rows.map(async ({ post, author }) => {
+    const [likes, commentsCount, shares, media] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(postLikes).where(eq(postLikes.postId, post.id)),
+      db.select({ count: sql<number>`count(*)` }).from(comments).where(eq(comments.postId, post.id)),
+      db.select({ count: sql<number>`count(*)` }).from(postShares).where(eq(postShares.postId, post.id)),
+      db.select().from(postMedia).where(eq(postMedia.postId, post.id)),
+    ]);
+    let liked = false;
+    if (viewerId) liked = Boolean((await db.select({ id: postLikes.id }).from(postLikes).where(and(eq(postLikes.postId, post.id), eq(postLikes.userId, viewerId))).limit(1))[0]);
+    let shared = false;
+    if (viewerId) shared = Boolean((await db.select({ id: postShares.id }).from(postShares).where(and(eq(postShares.postId, post.id), eq(postShares.userId, viewerId))).limit(1))[0]);
+    return { ...post, author, media, likesCount: Number(likes[0]?.count ?? 0), commentsCount: Number(commentsCount[0]?.count ?? 0), sharesCount: Number(shares[0]?.count ?? 0), liked, shared };
+  }));
+}
+
+export async function createNotification(recipientId: number, actorId: number, type: "follow" | "like" | "comment" | "reply" | "share" | "message", postId?: number, commentId?: number, body?: string) {
+  const db = await getDb(); if (!db || recipientId === actorId) return;
+  await db.insert(notifications).values({ recipientId, actorId, type, postId, commentId, body });
+}
+
+export async function isBlocked(a: number, b: number) {
+  const db = await getDb(); if (!db) return false;
+  const result = await db.select({ id: blocks.id }).from(blocks).where(or(and(eq(blocks.blockerId, a), eq(blocks.blockedId, b)), and(eq(blocks.blockerId, b), eq(blocks.blockedId, a)))).limit(1);
+  return Boolean(result[0]);
+}
+
+export async function getConversation(userId: number, otherUserId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const mine = await db.select({ conversationId: conversationMembers.conversationId }).from(conversationMembers).where(eq(conversationMembers.userId, userId));
+  const theirs = await db.select({ conversationId: conversationMembers.conversationId }).from(conversationMembers).where(eq(conversationMembers.userId, otherUserId));
+  const ids = new Set(mine.map(x => x.conversationId));
+  return theirs.find(x => ids.has(x.conversationId))?.conversationId;
+}
+
+export { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs };
