@@ -1,5 +1,9 @@
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 
+export function getLevelForPublishedPosts(count: number) {
+  return Math.max(1, Math.floor(Math.max(0, count) / 5) + 1);
+}
+
 export function decodeUploadData(data: string) {
   const raw = data.includes(",") ? data.split(",")[1] : data;
   if (!raw) throw new Error("بيانات الملف غير صالحة");
