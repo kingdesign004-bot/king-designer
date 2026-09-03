@@ -49,6 +49,11 @@ export async function getProfile(userId: number) {
   return { ...profile, followersCount: Number(followers[0]?.count ?? 0), followingCount: Number(following[0]?.count ?? 0) };
 }
 
+export async function countPostShares(db: ReturnType<typeof drizzle>, postId: number) {
+  const result = await db.select({ count: sql<number>`count(*)` }).from(postShares).where(eq(postShares.postId, postId));
+  return Number(result[0]?.count ?? 0);
+}
+
 export async function listFeed(viewerId?: number) {
   const db = await getDb(); if (!db) return [];
   const rows = await db.select({ post: posts, author: users }).from(posts).innerJoin(users, eq(posts.authorId, users.id)).orderBy(desc(posts.createdAt)).limit(30);
@@ -56,14 +61,14 @@ export async function listFeed(viewerId?: number) {
     const [likes, commentsCount, shares, media] = await Promise.all([
       db.select({ count: sql<number>`count(*)` }).from(postLikes).where(eq(postLikes.postId, post.id)),
       db.select({ count: sql<number>`count(*)` }).from(comments).where(eq(comments.postId, post.id)),
-      db.select({ count: sql<number>`count(*)` }).from(postShares).where(eq(postShares.postId, post.id)),
+      countPostShares(db, post.id),
       db.select().from(postMedia).where(eq(postMedia.postId, post.id)),
     ]);
     let liked = false;
     if (viewerId) liked = Boolean((await db.select({ id: postLikes.id }).from(postLikes).where(and(eq(postLikes.postId, post.id), eq(postLikes.userId, viewerId))).limit(1))[0]);
     let shared = false;
     if (viewerId) shared = Boolean((await db.select({ id: postShares.id }).from(postShares).where(and(eq(postShares.postId, post.id), eq(postShares.userId, viewerId))).limit(1))[0]);
-    return { ...post, author, media, likesCount: Number(likes[0]?.count ?? 0), commentsCount: Number(commentsCount[0]?.count ?? 0), sharesCount: Number(shares[0]?.count ?? 0), liked, shared };
+    return { ...post, author, media, likesCount: Number(likes[0]?.count ?? 0), commentsCount: Number(commentsCount[0]?.count ?? 0), sharesCount: shares, liked, shared };
   }));
 }
 
