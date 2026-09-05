@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, type InsertUser } from "../drizzle/schema";
+import { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, mediaViews, type InsertUser } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -128,4 +128,4 @@ export async function getConversation(userId: number, otherUserId: number) {
   return theirs.find(x => ids.has(x.conversationId))?.conversationId;
 }
 
-export { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs };
+export { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, mediaViews };

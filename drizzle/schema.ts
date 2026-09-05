@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -18,6 +18,20 @@ export const users = mysqlTable("users", {
   level: varchar("level", { length: 80 }),
   verified: int("verified").default(0).notNull(),
   verifiedAt: timestamp("verifiedAt"),
+  badgeColor: varchar("badgeColor", { length: 50 }),
+  nameColor: varchar("nameColor", { length: 50 }),
+  nameGradient: varchar("nameGradient", { length: 120 }),
+  isBanned: int("isBanned").default(0).notNull(),
+  banUntil: timestamp("banUntil"),
+  banReason: text("banReason"),
+  bannedBy: int("bannedBy"),
+  deviceFingerprint: varchar("deviceFingerprint", { length: 255 }),
+  experience: text("experience"),
+  skills: text("skills"),
+  tools: text("tools"),
+  portfolioUrl: varchar("portfolioUrl", { length: 500 }),
+  yearsOfExperience: varchar("yearsOfExperience", { length: 20 }),
+  availability: varchar("availability", { length: 100 }),
   isOnline: int("isOnline").default(0).notNull(),
   lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -33,6 +47,7 @@ export const posts = mysqlTable("posts", {
   category: varchar("category", { length: 100 }),
   hashtags: text("hashtags"),
   visibility: mysqlEnum("visibility", ["public", "followers", "private"]).default("public").notNull(),
+  layoutType: mysqlEnum("layoutType", ["grid", "carousel", "masonry", "single", "split"]).default("grid").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -47,10 +62,13 @@ export const postShares = mysqlTable("postShares", {
 export const postMedia = mysqlTable("postMedia", {
   id: int("id").autoincrement().primaryKey(),
   postId: int("postId").notNull(),
-  mediaType: mysqlEnum("mediaType", ["image", "video"]).notNull(),
+  mediaType: mysqlEnum("mediaType", ["image", "video", "audio", "gif", "svg"]).notNull(),
   url: text("url").notNull(),
   fileKey: text("fileKey").notNull(),
   sortOrder: int("sortOrder").default(0).notNull(),
+  views: int("views").default(0).notNull(),
+  duration: int("duration"),
+  caption: text("caption"),
 });
 
 export const follows = mysqlTable("follows", {
@@ -65,6 +83,10 @@ export const blocks = mysqlTable("blocks", {
   id: int("id").autoincrement().primaryKey(),
   blockerId: int("blockerId").notNull(),
   blockedId: int("blockedId").notNull(),
+  isPermanent: int("isPermanent").default(0).notNull(),
+  unblockAt: timestamp("unblockAt"),
+  reason: text("reason"),
+  isAdminBan: int("isAdminBan").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -102,6 +124,13 @@ export const notifications = mysqlTable("notifications", {
   commentId: int("commentId"),
   body: text("body"),
   isRead: int("isRead").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const mediaViews = mysqlTable("mediaViews", {
+  id: int("id").autoincrement().primaryKey(),
+  mediaId: int("mediaId").notNull(),
+  userId: int("userId").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

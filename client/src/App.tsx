@@ -10,6 +10,8 @@ import NotificationsPage from "./pages/NotificationsPage";
 import MessagesPage from "./pages/MessagesPage";
 import AdminPage from "./pages/AdminPage";
 import SearchPage from "./pages/SearchPage";
+import BlockListPage from "./pages/BlockListPage";
+import FollowSuggestionsPage from "./pages/FollowSuggestionsPage";
 
 function Router() {
   return <Switch>
@@ -19,6 +21,8 @@ function Router() {
     <Route path="/messages" component={MessagesPage} />
     <Route path="/admin" component={AdminPage} />
     <Route path="/search" component={SearchPage} />
+    <Route path="/block-list" component={BlockListPage} />
+    <Route path="/suggestions" component={FollowSuggestionsPage} />
     <Route path="/404" component={NotFound} />
     <Route component={NotFound} />
   </Switch>;
