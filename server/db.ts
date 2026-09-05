@@ -1,13 +1,14 @@
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, mediaViews, type InsertUser } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
-    try { _db = drizzle(process.env.DATABASE_URL); } catch (error) { console.warn("[Database] Failed to connect:", error); }
+    try { const client = postgres(process.env.DATABASE_URL, { prepare: false }); _db = drizzle(client); } catch (error) { console.warn("[Database] Failed to connect:", error); }
   }
   return _db;
 }
