@@ -49,6 +49,15 @@ export async function getProfile(userId: number) {
   return { ...profile, followersCount: Number(followers[0]?.count ?? 0), followingCount: Number(following[0]?.count ?? 0) };
 }
 
+export function filterInboxItems<T extends { conversationId: number }>(items: T[], memberConversationIds: number[]) {
+  const allowed = new Set(memberConversationIds);
+  return items.filter(item => allowed.has(item.conversationId));
+}
+
+export function sortInboxItems<T extends { updatedAt: Date | string }>(items: T[]) {
+  return [...items].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+}
+
 export async function countPostShares(db: ReturnType<typeof drizzle>, postId: number) {
   const result = await db.select({ count: sql<number>`count(*)` }).from(postShares).where(eq(postShares.postId, postId));
   return Number(result[0]?.count ?? 0);
@@ -57,7 +66,13 @@ export async function countPostShares(db: ReturnType<typeof drizzle>, postId: nu
 export async function listFeed(viewerId?: number) {
   const db = await getDb(); if (!db) return [];
   const rows = await db.select({ post: posts, author: users }).from(posts).innerJoin(users, eq(posts.authorId, users.id)).orderBy(desc(posts.createdAt)).limit(30);
-  return Promise.all(rows.map(async ({ post, author }) => {
+  let visibleRows = rows;
+  if (viewerId) {
+    const blockedRows = await db.select().from(blocks).where(or(eq(blocks.blockerId, viewerId), eq(blocks.blockedId, viewerId)));
+    const blockedIds = new Set(blockedRows.flatMap(row => [row.blockerId, row.blockedId]).filter(id => id !== viewerId));
+    visibleRows = rows.filter(({ post }) => !blockedIds.has(post.authorId));
+  }
+  return Promise.all(visibleRows.map(async ({ post, author }) => {
     const [likes, commentsCount, shares, media] = await Promise.all([
       db.select({ count: sql<number>`count(*)` }).from(postLikes).where(eq(postLikes.postId, post.id)),
       db.select({ count: sql<number>`count(*)` }).from(comments).where(eq(comments.postId, post.id)),
