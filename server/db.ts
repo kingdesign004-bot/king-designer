@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, type InsertUser } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -46,7 +46,28 @@ export async function getProfile(userId: number) {
     db.select({ count: sql<number>`count(*)` }).from(follows).where(and(eq(follows.followingId, userId), eq(follows.status, "accepted"))),
     db.select({ count: sql<number>`count(*)` }).from(follows).where(and(eq(follows.followerId, userId), eq(follows.status, "accepted"))),
   ]);
-  return { ...profile, followersCount: Number(followers[0]?.count ?? 0), followingCount: Number(following[0]?.count ?? 0) };
+  const activeSubscription = (await db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, "active"), or(isNull(subscriptions.endsAt), gt(subscriptions.endsAt, new Date())))).limit(1))[0];
+  return { ...profile, plan: activeSubscription?.plan ?? "free", followersCount: Number(followers[0]?.count ?? 0), followingCount: Number(following[0]?.count ?? 0) };
+}
+
+export function getMutualBlockedIds(rows: Array<{ blockerId: number; blockedId: number }>, viewerId: number) {
+  return new Set(rows.flatMap(row => [row.blockerId, row.blockedId]).filter(id => id !== viewerId));
+}
+
+export function filterBlockedRecords<T>(items: T[], blockedIds: Set<number>, getUserId: (item: T) => number) {
+  return items.filter(item => !blockedIds.has(getUserId(item)));
+}
+
+export function filterSearchResults<TUser extends { id: number }, TPost extends { author: { id: number } }>(usersResult: TUser[], postsResult: TPost[], blockedIds: Set<number>) {
+  return { users: filterBlockedRecords(usersResult, blockedIds, user => user.id), posts: filterBlockedRecords(postsResult, blockedIds, post => post.author.id) };
+}
+
+export function filterNotificationRows<T extends { actor: { id: number } }>(rows: T[], blockedIds: Set<number>) {
+  return filterBlockedRecords(rows, blockedIds, row => row.actor.id);
+}
+
+export function filterInboxParticipants<T extends { participant: { id: number } }>(items: T[], blockedIds: Set<number>) {
+  return filterBlockedRecords(items, blockedIds, item => item.participant.id);
 }
 
 export function filterInboxItems<T extends { conversationId: number }>(items: T[], memberConversationIds: number[]) {
@@ -69,7 +90,7 @@ export async function listFeed(viewerId?: number) {
   let visibleRows = rows;
   if (viewerId) {
     const blockedRows = await db.select().from(blocks).where(or(eq(blocks.blockerId, viewerId), eq(blocks.blockedId, viewerId)));
-    const blockedIds = new Set(blockedRows.flatMap(row => [row.blockerId, row.blockedId]).filter(id => id !== viewerId));
+    const blockedIds = getMutualBlockedIds(blockedRows, viewerId);
     visibleRows = rows.filter(({ post }) => !blockedIds.has(post.authorId));
   }
   return Promise.all(visibleRows.map(async ({ post, author }) => {
@@ -83,7 +104,8 @@ export async function listFeed(viewerId?: number) {
     if (viewerId) liked = Boolean((await db.select({ id: postLikes.id }).from(postLikes).where(and(eq(postLikes.postId, post.id), eq(postLikes.userId, viewerId))).limit(1))[0]);
     let shared = false;
     if (viewerId) shared = Boolean((await db.select({ id: postShares.id }).from(postShares).where(and(eq(postShares.postId, post.id), eq(postShares.userId, viewerId))).limit(1))[0]);
-    return { ...post, author, media, likesCount: Number(likes[0]?.count ?? 0), commentsCount: Number(commentsCount[0]?.count ?? 0), sharesCount: shares, liked, shared };
+    const activeSubscription = (await db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.userId, author.id), eq(subscriptions.status, "active"), or(isNull(subscriptions.endsAt), gt(subscriptions.endsAt, new Date())))).limit(1))[0];
+    return { ...post, author: { ...author, plan: activeSubscription?.plan ?? "free" }, media, likesCount: Number(likes[0]?.count ?? 0), commentsCount: Number(commentsCount[0]?.count ?? 0), sharesCount: shares, liked, shared };
   }));
 }
 
