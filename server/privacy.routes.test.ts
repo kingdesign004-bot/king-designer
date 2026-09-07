@@ -31,6 +31,8 @@ describe("privacy tRPC routes", () => {
     mocked.getDb.mockResolvedValue(fakeDb([
       [{ blockerId: 1, blockedId: 2 }],
       [{ id: 2, name: "محظور" }, { id: 3, name: "ظاهر" }],
+      [{ plan: "free" }],
+      [{ plan: "pro" }],
       [{ post: { id: 9 }, author: { id: 2 } }, { post: { id: 10 }, author: { id: 3 } }],
     ]));
     const result = await appRouter.createCaller(ctx as any).search.all({ q: "مصمم" });
@@ -55,7 +57,9 @@ describe("privacy tRPC routes", () => {
         { conversation: { id: 11, updatedAt: new Date("2026-09-05T11:00:00Z") }, user: { id: 3, name: "ظاهر", verified: 0, level: "1" } },
       ],
       [{ plan: "free" }],
+      [],
       [{ plan: "vip" }],
+      [],
       [{ blockerId: 1, blockedId: 2 }],
     ]));
     const result = await appRouter.createCaller(ctx as any).messages.inbox();

@@ -1,14 +1,29 @@
 import { randomInt } from "node:crypto";
 import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, mediaViews, type InsertUser } from "../drizzle/schema";
+import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2";
+import { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, mediaViews, verificationRequests, supportTickets, stories, storyInteractions, ratings, type InsertUser } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
-    try { const client = postgres(process.env.DATABASE_URL, { prepare: false }); _db = drizzle(client); } catch (error) { console.warn("[Database] Failed to connect:", error); }
+    try {
+      const url = new URL(process.env.DATABASE_URL);
+      const pool = mysql.createPool({
+        host: url.hostname,
+        port: Number(url.port || 3306),
+        user: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: decodeURIComponent(url.pathname.replace(/^\//, "")),
+        ssl: url.searchParams.has("ssl") ? { rejectUnauthorized: true } : undefined,
+        waitForConnections: true,
+        connectionLimit: 5,
+      });
+      _db = drizzle(pool);
+    } catch (error) {
+      console.warn("[Database] Failed to connect:", error);
+    }
   }
   return _db;
 }
@@ -29,9 +44,11 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   for (const field of ["name", "email", "loginMethod"] as const) {
     if (user[field] !== undefined) { values[field] = user[field] ?? null; updateSet[field] = user[field] ?? null; }
   }
+  if (user.accountType !== undefined) { values.accountType = user.accountType; updateSet.accountType = user.accountType; }
+  if (user.birthYear !== undefined) { values.birthYear = user.birthYear ?? null; updateSet.birthYear = user.birthYear ?? null; }
   if (user.role !== undefined || user.openId === ENV.ownerOpenId) { values.role = user.role ?? "admin"; updateSet.role = values.role; }
   values.lastSignedIn = user.lastSignedIn ?? new Date(); updateSet.lastSignedIn = values.lastSignedIn;
-  await db.insert(users).values(values).onConflictDoUpdate({ target: users.openId, set: updateSet });
+  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -47,8 +64,11 @@ export async function getProfile(userId: number) {
     db.select({ count: sql<number>`count(*)` }).from(follows).where(and(eq(follows.followingId, userId), eq(follows.status, "accepted"))),
     db.select({ count: sql<number>`count(*)` }).from(follows).where(and(eq(follows.followerId, userId), eq(follows.status, "accepted"))),
   ]);
-  const activeSubscription = (await db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, "active"), or(isNull(subscriptions.endsAt), gt(subscriptions.endsAt, new Date())))).limit(1))[0];
-  return { ...profile, plan: activeSubscription?.plan ?? "free", followersCount: Number(followers[0]?.count ?? 0), followingCount: Number(following[0]?.count ?? 0) };
+  const [activeSubscription, ratingSummary] = await Promise.all([
+    db.select({ plan: subscriptions.plan }).from(subscriptions).where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, "active"), or(isNull(subscriptions.endsAt), gt(subscriptions.endsAt, new Date())))).limit(1),
+    db.select({ average: sql<number>`coalesce(avg(${ratings.score}), 0)`, count: sql<number>`count(*)` }).from(ratings).where(eq(ratings.designerId, userId)),
+  ]);
+  return { ...profile, plan: activeSubscription[0]?.plan ?? "free", followersCount: Number(followers[0]?.count ?? 0), followingCount: Number(following[0]?.count ?? 0), ratingAverage: Number(ratingSummary[0]?.average ?? 0), ratingCount: Number(ratingSummary[0]?.count ?? 0) };
 }
 
 export function getMutualBlockedIds(rows: Array<{ blockerId: number; blockedId: number }>, viewerId: number) {
@@ -129,4 +149,4 @@ export async function getConversation(userId: number, otherUserId: number) {
   return theirs.find(x => ids.has(x.conversationId))?.conversationId;
 }
 
-export { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, mediaViews };
+export { comments, conversationMembers, conversations, follows, notifications, postLikes, postMedia, postShares, posts, splashSlides, users, blocks, messages, commentLikes, reports, creditLedger, payments, subscriptions, aiProviders, aiModels, pricingPlans, rewards, adminAuditLogs, mediaViews, verificationRequests, supportTickets, stories, storyInteractions, ratings };

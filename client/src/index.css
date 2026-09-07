@@ -19,3 +19,39 @@ button:active { transform: scale(.97); }
 .gold-gradient { background: linear-gradient(135deg, #f6c94c 0%, #d99b19 100%); }
 .ink-gradient { background: radial-gradient(circle at 85% 10%, rgba(246,201,76,.2), transparent 34%), #0b0b0b; }
 .grid-paper { background-image: linear-gradient(rgba(20,20,20,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(20,20,20,.04) 1px, transparent 1px); background-size: 28px 28px; }
+
+
+/* Smooth interaction system */
+@keyframes kd-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes kd-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.skeleton-shimmer {
+  background: linear-gradient(110deg, #f2eee5 25%, #fffaf0 40%, #f2eee5 55%);
+  background-size: 200% 100%;
+  animation: kd-shimmer 1.5s ease-in-out infinite;
+}
+.motion-card { animation: kd-fade-up .42s cubic-bezier(.23,1,.32,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+button:not(:disabled), a[href], [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled):hover, a[href]:not(.no-lift):hover, [role="button"]:hover {
+  transform: translateY(-1px);
+}
+button:not(:disabled):focus-visible, a[href]:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(216, 173, 64, .38);
+  outline-offset: 3px;
+}
+.media-frame { overflow: hidden; background: #f4f1e8; }
+.media-frame img, .media-frame video { transition: transform .5s cubic-bezier(.23,1,.32,1), filter .35s ease; }
+.media-frame:hover img, .media-frame:hover video { transform: scale(1.035); filter: saturate(1.04); }
+@media (max-width: 639px) {
+  .mobile-safe-bottom { padding-bottom: 5.75rem; }
+}

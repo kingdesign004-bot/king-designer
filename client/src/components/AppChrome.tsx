@@ -1,49 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Bell, Compass, LogOut, MessageCircle, Search } from "lucide-react";
+import { Bell, Compass, LogOut, MessageCircle, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 
-const logo = "/manus-storage/king-designer-mark_ec43f952.png";
-
+const logo = "/manus-storage/king-designer-logo_616fa4e8.png";
 export default function AppChrome({ children, title }: { children: ReactNode; title?: string }) {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [, navigate] = useLocation();
-  const [query, setQuery] = useState("");
-  const markOnline = trpc.presence.markOnline.useMutation();
-  const markOffline = trpc.presence.markOffline.useMutation();
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    markOnline.mutate();
-    const handleOffline = () => markOffline.mutate();
-    window.addEventListener("beforeunload", handleOffline);
-    return () => window.removeEventListener("beforeunload", handleOffline);
-  }, [isAuthenticated]);
-
-  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (query.trim()) navigate(`/search?q=${encodeURIComponent(query.trim())}`);
-  };
-
-  return <div dir="rtl" className="min-h-screen bg-[#f8f7f3] text-neutral-950">
-    <header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-[#f8f7f3]/95 backdrop-blur-xl">
-      <div className="container flex min-h-20 flex-wrap items-center justify-between gap-3 py-3 sm:flex-nowrap sm:gap-5 sm:py-0">
-        <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="العودة إلى التغذية"><img src={logo} alt="KING DESIGNER" className="h-10 w-10 object-contain sm:h-11 sm:w-11" /><div className="hidden sm:block"><div className="font-display text-sm font-extrabold">KING DESIGNER</div><div className="text-[10px] font-semibold text-neutral-500">مساحة تصنع الفرق</div></div></Link>
-        <nav className="order-2 flex items-center gap-0.5 sm:order-3 sm:gap-1">
-          <Link href="/" className="grid h-10 w-10 place-items-center rounded-xl text-neutral-500 transition hover:bg-white" aria-label="التغذية"><Compass className="h-4 w-4" /></Link>
-          <Link href="/messages" className="grid h-10 w-10 place-items-center rounded-xl text-neutral-500 transition hover:bg-white" aria-label="الرسائل"><MessageCircle className="h-4 w-4" /></Link>
-          <Link href="/notifications" className="grid h-10 w-10 place-items-center rounded-xl text-neutral-500 transition hover:bg-white" aria-label="الإشعارات"><Bell className="h-4 w-4" /></Link>
-          {user?.role === "admin" && <Link href="/admin" className="hidden rounded-xl bg-[#fff4cf] px-3 py-2 text-xs font-bold text-[#a36e00] transition hover:bg-[#ffeaa8] sm:block">الإدارة</Link>}
-          {isAuthenticated ? <><Link href={`/profile/${user?.id}`} className="mr-1 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold">ملفي</Link><button onClick={() => logout()} className="grid h-10 w-10 place-items-center rounded-xl text-neutral-500 transition hover:bg-white" aria-label="تسجيل الخروج"><LogOut className="h-4 w-4" /></button></> : <Button onClick={() => startLogin()} className="rounded-xl bg-neutral-950 px-4 text-white">دخول</Button>}
-        </nav>
-        <form onSubmit={submitSearch} className="order-3 w-full sm:order-2 sm:flex-1 sm:max-w-md md:max-w-lg">
-          <div className="flex h-11 items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-400 shadow-sm focus-within:border-[#d8ad40] focus-within:ring-2 focus-within:ring-[#f6c94c]/20"><Search className="h-4 w-4 shrink-0" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="ابحث عن مصمم أو مشروع أو وسم" aria-label="البحث" className="w-full bg-transparent outline-none placeholder:text-neutral-400" /></div>
-        </form>
-      </div>
-    </header>
-    <main>{title && <div className="container pt-8"><h1 className="font-display text-2xl font-extrabold">{title}</h1></div>}{children}</main>
-  </div>;
+  const { user, isAuthenticated, logout } = useAuth(); const [, navigate] = useLocation(); const [query, setQuery] = useState(""); const markOnline = trpc.presence.markOnline.useMutation(); const markOffline = trpc.presence.markOffline.useMutation(); const notifications = trpc.notifications.list.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 15000 }); const unread = notifications.data?.filter(item => !item.notification.isRead).length ?? 0;
+  useEffect(() => { if (!isAuthenticated) return; markOnline.mutate(); const handleOffline = () => markOffline.mutate(); window.addEventListener("beforeunload", handleOffline); return () => { window.removeEventListener("beforeunload", handleOffline); markOffline.mutate(); }; }, [isAuthenticated]);
+  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); if (query.trim()) navigate(`/search?q=${encodeURIComponent(query.trim())}`); };
+  return <div dir="rtl" className="min-h-screen bg-[#f8f7f3] pb-24 text-neutral-950 md:pb-0"><header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-[#f8f7f3]/95 backdrop-blur-xl"><div className="container flex min-h-20 flex-wrap items-center justify-between gap-3 py-3 sm:flex-nowrap sm:gap-5 sm:py-0"><Link href="/explore" className="flex h-12 w-28 shrink-0 items-center gap-2" aria-label="العودة إلى استكشف"><img src={logo} alt="KING DESIGNER" className="h-12 w-28 object-contain" /></Link><nav className="order-2 hidden items-center gap-1 sm:flex"><Link href="/explore" className="grid h-10 w-10 place-items-center rounded-xl text-neutral-500 transition hover:bg-white" aria-label="استكشف"><Compass className="h-4 w-4" /></Link><Link href="/messages" className="grid h-10 w-10 place-items-center rounded-xl text-neutral-500 transition hover:bg-white" aria-label="الرسائل"><MessageCircle className="h-4 w-4" /></Link><Link href="/notifications" className="relative grid h-10 w-10 place-items-center rounded-xl text-neutral-500 transition hover:bg-white" aria-label="الإشعارات"><Bell className="h-4 w-4" />{unread > 0 && <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">{Math.min(unread, 9)}</span>}</Link>{user?.role === "admin" && <Link href="/admin" className="rounded-xl bg-[#fff4cf] px-3 py-2 text-xs font-bold text-[#a36e00]">الإدارة</Link>}</nav><form onSubmit={submitSearch} className="order-3 w-full sm:order-2 sm:flex-1 sm:max-w-md md:max-w-lg"><div className="flex h-11 items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-400 shadow-sm transition focus-within:border-[#d8ad40] focus-within:shadow-md"><Search className="h-4 w-4 shrink-0" /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="ابحث عن مصمم أو مشروع أو وسم" aria-label="البحث" className="w-full bg-transparent outline-none placeholder:text-neutral-400" /></div></form><div className="order-2 flex items-center gap-2 sm:order-3">{isAuthenticated ? <><Link href={`/profile/${user?.id}`} className="hidden rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold sm:block">ملفي</Link><button onClick={() => logout()} className="grid h-10 w-10 place-items-center rounded-xl text-neutral-500 hover:bg-white" aria-label="تسجيل الخروج"><LogOut className="h-4 w-4" /></button></> : <Button onClick={() => startLogin()} className="rounded-xl bg-neutral-950 px-4 text-white">دخول</Button>}</div></div></header><main>{title && <div className="container pt-8"><h1 className="font-display text-2xl font-extrabold">{title}</h1></div>}{children}</main>{<nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border border-neutral-200 bg-white/95 p-2 shadow-[0_14px_40px_rgba(25,20,10,.16)] backdrop-blur-xl md:hidden" aria-label="التنقل السفلي"><Link href="/explore" className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-bold text-neutral-500"><Compass className="h-4 w-4" />استكشف</Link><Link href="/messages" className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-bold text-neutral-500"><MessageCircle className="h-4 w-4" />الرسائل</Link><Link href="/notifications" className="relative flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-bold text-neutral-500"><Bell className="h-4 w-4" />الإشعارات{unread > 0 && <span className="absolute right-6 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] text-white">{Math.min(unread, 9)}</span>}</Link><Link href={isAuthenticated ? `/profile/${user?.id}` : "/"} className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-bold text-neutral-500"><UserRound className="h-4 w-4" />ملفي</Link><Link href="/search" className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-bold text-neutral-500"><Search className="h-4 w-4" />بحث</Link></nav>}</div>;
 }

@@ -311,6 +311,18 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
+    const banUntil = user.banUntil ? new Date(user.banUntil).getTime() : null;
+    const activeBan = Boolean(user.isBanned) && (banUntil === null || banUntil > Date.now());
+    if (activeBan) {
+      const remaining = banUntil ? Math.max(0, banUntil - Date.now()) : null;
+      const hours = remaining === null ? null : Math.ceil(remaining / (60 * 60 * 1000));
+      throw ForbiddenError(
+        hours === null
+          ? `تم إيقاف الحساب نهائيًا من الإدارة. السبب: ${user.banReason || "مخالفة سياسة الموقع"}. تواصل مع الإدارة.`
+          : `تم إيقاف الحساب مؤقتًا من الإدارة. المتبقي تقريبًا ${hours} ساعة. السبب: ${user.banReason || "مخالفة سياسة الموقع"}. تواصل مع الإدارة.`
+      );
+    }
+
     await db.upsertUser({
       openId: user.openId,
       lastSignedIn: signedInAt,

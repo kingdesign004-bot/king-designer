@@ -21,4 +21,11 @@ describe("PostCard clickable rich content", () => {
     expect(html).toContain('href="/profile/7"');
     expect(html).toContain('href="/search?q=%23%D9%87%D9%88%D9%8A%D8%A9"');
   });
+
+  it("adds the smooth card and media interaction classes", () => {
+    const post = { id: 2, authorId: 1, title: "صورة", description: "", visibility: "public", layoutType: "single", createdAt: new Date(), author: { id: 1, name: "صاحب العمل", avatarUrl: null }, media: [{ id: 3, mediaType: "image", url: "https://example.test/image.png", views: 0 }], likesCount: 0, commentsCount: 0, sharesCount: 0, liked: false };
+    const html = renderToStaticMarkup(React.createElement(PostCard, { post, isAuthenticated: false, viewerId: 8 }));
+    expect(html).toContain("hover:-translate-y-0.5");
+    expect(html).toContain("media-frame");
+  });
 });

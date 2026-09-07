@@ -1,3 +1,4 @@
+import React from "react";
 import { BadgeCheck, Crown, Palette } from "lucide-react";
 
 export default function IdentityBadges({ user, compact = false }: { user?: { verified?: number | null; level?: string | number | null; plan?: "free" | "pro" | "vip" | null; badgeColor?: string | null } | null; compact?: boolean }) {

@@ -1,0 +1,17 @@
+import { useState } from "react";
+import { FileUp, Loader2, X } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
+function readFile(file: File) { return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file); }); }
+
+export default function SupportContactBox() {
+  const [open, setOpen] = useState(false); const [subject, setSubject] = useState(""); const [body, setBody] = useState(""); const [file, setFile] = useState<File | null>(null);
+  const upload = trpc.media.upload.useMutation();
+  const create = trpc.support.create.useMutation({ onSuccess: () => { toast.success("تم إرسال رسالتك للإدارة"); setOpen(false); setSubject(""); setBody(""); setFile(null); }, onError: error => toast.error(error.message) });
+  const submit = async () => { if (!subject.trim() || !body.trim()) return toast.error("اكتب عنوان الرسالة ومحتواها"); try { let attachmentUrl: string | undefined; let attachmentType: string | undefined; let attachmentDuration: number | undefined; if (file) { const stored = await upload.mutateAsync({ fileName: file.name, mimeType: file.type as any, data: await readFile(file) }); attachmentUrl = stored.url; attachmentType = file.type; attachmentDuration = file.type.startsWith("video/") || file.type.startsWith("audio/") ? 60 : undefined; } create.mutate({ subject, body, attachmentUrl, attachmentType, attachmentDuration }); } catch (error) { toast.error(error instanceof Error ? error.message : "تعذر رفع المرفق"); } };
+  return <><Button onClick={() => setOpen(true)} variant="outline" className="w-full rounded-xl">تواصل مع الإدارة</Button>{open && <div className="fixed inset-0 z-50 grid place-items-center bg-neutral-950/50 p-4 backdrop-blur-sm"><div className="w-full max-w-lg rounded-[1.75rem] bg-white p-6 shadow-2xl" dir="rtl"><div className="flex items-center justify-between"><div><h2 className="font-display text-xl font-bold">تواصل مباشر مع الإدارة</h2><p className="mt-1 text-xs text-neutral-500">يمكنك كتابة التفاصيل وإرفاق مستند أو صورة أو فيديو حتى دقيقة.</p></div><button onClick={() => setOpen(false)} aria-label="إغلاق"><X className="h-5 w-5 text-neutral-400" /></button></div><div className="mt-5 space-y-3"><Input value={subject} onChange={event => setSubject(event.target.value)} placeholder="عنوان الرسالة" className="rounded-xl" /><Textarea value={body} onChange={event => setBody(event.target.value)} placeholder="اكتب رسالتك بالتفصيل" className="min-h-32 rounded-xl" />{file && <div className="rounded-xl bg-[#fff8df] p-3 text-xs font-bold text-[#8b5a00]">معاينة المرفق: {file.name} ({Math.ceil(file.size / 1024)}KB)</div>}<label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 p-4 text-xs text-neutral-500"><FileUp className="h-4 w-4" />إرفاق مستند / صورة / فيديو / صوت<input type="file" accept="image/*,video/mp4,video/webm,audio/*,.pdf,.doc,.docx" className="hidden" onChange={event => setFile(event.target.files?.[0] || null)} /></label><Button onClick={submit} disabled={create.isPending || upload.isPending} className="h-11 w-full rounded-xl bg-neutral-950 text-white">{create.isPending || upload.isPending ? <Loader2 className="animate-spin" /> : "إرسال للإدارة"}</Button></div></div></div>}</>;
+}

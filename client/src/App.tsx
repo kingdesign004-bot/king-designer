@@ -12,10 +12,12 @@ import AdminPage from "./pages/AdminPage";
 import SearchPage from "./pages/SearchPage";
 import BlockListPage from "./pages/BlockListPage";
 import FollowSuggestionsPage from "./pages/FollowSuggestionsPage";
+import ExplorePage from "./pages/ExplorePage";
 
 function Router() {
   return <Switch>
     <Route path="/" component={Home} />
+    <Route path="/explore" component={ExplorePage} />
     <Route path="/profile/:id" component={ProfilePage} />
     <Route path="/notifications" component={NotificationsPage} />
     <Route path="/messages" component={MessagesPage} />
