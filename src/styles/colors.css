@@ -1,0 +1,85 @@
+// src/styles/colors.css - تطبيق الألوان بشكل فعلي
+@layer components {
+  /* VIP Badge Styles */
+  .badge-vip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold;
+    background: linear-gradient(135deg, #f5a04d 0%, #d97a00 100%);
+    color: #1a1a1a;
+    box-shadow: 0 4px 12px rgba(245, 160, 77, 0.3);
+  }
+
+  /* Pro Badge Styles */
+  .badge-pro {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold;
+    background: linear-gradient(135deg, #8f7436 0%, #663300 100%);
+    color: #fef9f3;
+    box-shadow: 0 4px 12px rgba(143, 116, 54, 0.3);
+  }
+
+  /* Verified Badge */
+  .badge-verified {
+    @apply inline-flex items-center justify-center w-6 h-6 rounded-full;
+    background: linear-gradient(135deg, #f5a04d 0%, #d97a00 100%);
+    color: #1a1a1a;
+  }
+
+  /* Frame Styles */
+  .frame-gold {
+    @apply border-4 rounded-xl;
+    border-image: linear-gradient(135deg, #f5a04d, #d97a00) 1;
+  }
+
+  /* Hand Background Preview */
+  .hand-preview {
+    @apply relative overflow-hidden rounded-2xl;
+    background-image: url('data:image/svg+xml...');
+    background-size: cover;
+    background-position: center;
+  }
+
+  /* Active Status Indicator */
+  .status-online {
+    @apply relative inline-block;
+  }
+
+  .status-online::after {
+    content: '';
+    @apply absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white;
+  }
+
+  .status-offline::after {
+    content: '';
+    @apply absolute bottom-0 right-0 w-3 h-3 bg-gray-400 rounded-full border-2 border-white;
+  }
+
+  /* Text Gradient for Names */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #f5a04d 0%, #d97a00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Story Interaction Styles */
+  .story-action-btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    background: linear-gradient(135deg, #f5a04d 0%, #d97a00 100%);
+    color: #1a1a1a;
+  }
+
+  .story-action-btn:hover {
+    @apply shadow-lg scale-105;
+  }
+}
+
+/* CSS Custom Properties للألوان */
+:root {
+  --color-gold-primary: #f5a04d;
+  --color-gold-dark: #d97a00;
+  --color-ivory: #fffcf5;
+  --color-charcoal: #2d2d2d;
+  --color-charcoal-light: #4a4a4a;
+  --gradient-vip: linear-gradient(135deg, #f5a04d 0%, #d97a00 100%);
+  --gradient-pro: linear-gradient(135deg, #8f7436 0%, #663300 100%);
+  --shadow-gold: 0 4px 12px rgba(245, 160, 77, 0.3);
+}
