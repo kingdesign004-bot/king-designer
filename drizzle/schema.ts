@@ -1,25 +1,25 @@
-import { int, text, timestamp, varchar, mysqlEnum, mysqlTable, uniqueIndex, index } from "drizzle-orm/mysql-core";
+import { int, text, timestamp, varchar, pgEnum, pgTable, uniqueIndex, index } from "drizzle-orm/pg-core";
 
-const roleEnum = (column: string) => mysqlEnum(column, ["user", "admin"] as const);
-const visibilityEnum = (column: string) => mysqlEnum(column, ["public", "followers", "private"] as const);
-const layoutEnum = (column: string) => mysqlEnum(column, ["grid", "carousel", "masonry", "single", "split"] as const);
-const mediaTypeEnum = (column: string) => mysqlEnum(column, ["image", "video", "audio", "gif", "svg", "pdf"] as const);
-const followStatusEnum = (column: string) => mysqlEnum(column, ["pending", "accepted"] as const);
-const notifTypeEnum = (column: string) => mysqlEnum(column, ["follow", "like", "comment", "reply", "share", "message"] as const);
-const msgTypeEnum = (column: string) => mysqlEnum(column, ["text", "image", "video", "audio"] as const);
-const reportTargetEnum = (column: string) => mysqlEnum(column, ["user", "post", "comment", "message", "story"] as const);
-const reportStatusEnum = (column: string) => mysqlEnum(column, ["open", "reviewed", "dismissed", "resolved"] as const);
-const creditKindEnum = (column: string) => mysqlEnum(column, ["welcome", "daily", "purchase", "spend", "refund", "reward", "adjustment"] as const);
-const payStatusEnum = (column: string) => mysqlEnum(column, ["initiated", "succeeded", "failed", "refunded"] as const);
-const subPlanEnum = (column: string) => mysqlEnum(column, ["free", "pro", "vip"] as const);
-const subStatusEnum = (column: string) => mysqlEnum(column, ["active", "canceled"] as const);
-const rewardTypeEnum = (column: string) => mysqlEnum(column, ["welcome", "daily", "referral", "manual"] as const);
-const accountTypeEnum = (column: string) => mysqlEnum(column, ["client", "designer"] as const);
-const verificationStatusEnum = (column: string) => mysqlEnum(column, ["none", "pending", "approved", "rejected"] as const);
-const ticketStatusEnum = (column: string) => mysqlEnum(column, ["open", "in_progress", "resolved", "closed"] as const);
+const roleEnum = (column: string) => pgEnum(column, ["user", "admin"]);
+const visibilityEnum = (column: string) => pgEnum(column, ["public", "followers", "private"]);
+const layoutEnum = (column: string) => pgEnum(column, ["grid", "carousel", "masonry", "single", "split"]);
+const mediaTypeEnum = (column: string) => pgEnum(column, ["image", "video", "audio", "gif", "svg", "pdf"]);
+const followStatusEnum = (column: string) => pgEnum(column, ["pending", "accepted"]);
+const notifTypeEnum = (column: string) => pgEnum(column, ["follow", "like", "comment", "reply", "share", "message"]);
+const msgTypeEnum = (column: string) => pgEnum(column, ["text", "image", "video", "audio"]);
+const reportTargetEnum = (column: string) => pgEnum(column, ["user", "post", "comment", "message", "story"]);
+const reportStatusEnum = (column: string) => pgEnum(column, ["open", "reviewed", "dismissed", "resolved"]);
+const creditKindEnum = (column: string) => pgEnum(column, ["welcome", "daily", "purchase", "spend", "refund", "reward", "adjustment"]);
+const payStatusEnum = (column: string) => pgEnum(column, ["initiated", "succeeded", "failed", "refunded"]);
+const subPlanEnum = (column: string) => pgEnum(column, ["free", "pro", "vip"]);
+const subStatusEnum = (column: string) => pgEnum(column, ["active", "canceled"]);
+const rewardTypeEnum = (column: string) => pgEnum(column, ["welcome", "daily", "referral", "manual"]);
+const accountTypeEnum = (column: string) => pgEnum(column, ["client", "designer"]);
+const verificationStatusEnum = (column: string) => pgEnum(column, ["none", "pending", "approved", "rejected"]);
+const ticketStatusEnum = (column: string) => pgEnum(column, ["open", "in_progress", "resolved", "closed"]);
 
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+export const users = pgTable("users", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   handle: varchar("handle", { length: 80 }).unique(),
@@ -67,8 +67,8 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
-export const posts = mysqlTable("posts", {
-  id: int("id").autoincrement().primaryKey(),
+export const posts = pgTable("posts", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   authorId: int("authorId").notNull(),
   title: varchar("title", { length: 220 }).notNull(),
   description: text("description"),
@@ -80,15 +80,15 @@ export const posts = mysqlTable("posts", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const postShares = mysqlTable("post_shares", {
-  id: int("id").autoincrement().primaryKey(),
+export const postShares = pgTable("post_shares", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   postId: int("postId").notNull(),
   userId: int("userId").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const postMedia = mysqlTable("post_media", {
-  id: int("id").autoincrement().primaryKey(),
+export const postMedia = pgTable("post_media", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   postId: int("postId").notNull(),
   mediaType: mediaTypeEnum("mediaType").notNull(),
   url: text("url").notNull(),
@@ -99,16 +99,16 @@ export const postMedia = mysqlTable("post_media", {
   caption: text("caption"),
 });
 
-export const follows = mysqlTable("follows", {
-  id: int("id").autoincrement().primaryKey(),
+export const follows = pgTable("follows", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   followerId: int("followerId").notNull(),
   followingId: int("followingId").notNull(),
   status: followStatusEnum("status").default("accepted").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const blocks = mysqlTable("blocks", {
-  id: int("id").autoincrement().primaryKey(),
+export const blocks = pgTable("blocks", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   blockerId: int("blockerId").notNull(),
   blockedId: int("blockedId").notNull(),
   isPermanent: int("isPermanent").default(0).notNull(),
@@ -118,15 +118,15 @@ export const blocks = mysqlTable("blocks", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const postLikes = mysqlTable("post_likes", {
-  id: int("id").autoincrement().primaryKey(),
+export const postLikes = pgTable("post_likes", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   postId: int("postId").notNull(),
   userId: int("userId").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const comments = mysqlTable("comments", {
-  id: int("id").autoincrement().primaryKey(),
+export const comments = pgTable("comments", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   postId: int("postId").notNull(),
   authorId: int("authorId").notNull(),
   parentId: int("parentId"),
@@ -136,15 +136,15 @@ export const comments = mysqlTable("comments", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const commentLikes = mysqlTable("comment_likes", {
-  id: int("id").autoincrement().primaryKey(),
+export const commentLikes = pgTable("comment_likes", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   commentId: int("commentId").notNull(),
   userId: int("userId").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const notifications = mysqlTable("notifications", {
-  id: int("id").autoincrement().primaryKey(),
+export const notifications = pgTable("notifications", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   recipientId: int("recipientId").notNull(),
   actorId: int("actorId").notNull(),
   type: notifTypeEnum("type").notNull(),
@@ -155,29 +155,29 @@ export const notifications = mysqlTable("notifications", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const mediaViews = mysqlTable("media_views", {
-  id: int("id").autoincrement().primaryKey(),
+export const mediaViews = pgTable("media_views", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   mediaId: int("mediaId").notNull(),
   userId: int("userId").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const conversations = mysqlTable("conversations", {
-  id: int("id").autoincrement().primaryKey(),
+export const conversations = pgTable("conversations", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const conversationMembers = mysqlTable("conversation_members", {
-  id: int("id").autoincrement().primaryKey(),
+export const conversationMembers = pgTable("conversation_members", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   conversationId: int("conversationId").notNull(),
   userId: int("userId").notNull(),
   isPinned: int("isPinned").default(0).notNull(),
   lastReadAt: timestamp("lastReadAt"),
 });
 
-export const messages = mysqlTable("messages", {
-  id: int("id").autoincrement().primaryKey(),
+export const messages = pgTable("messages", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   conversationId: int("conversationId").notNull(),
   senderId: int("senderId").notNull(),
   messageType: msgTypeEnum("messageType").default("text").notNull(),
@@ -188,8 +188,8 @@ export const messages = mysqlTable("messages", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const splashSlides = mysqlTable("splash_slides", {
-  id: int("id").autoincrement().primaryKey(),
+export const splashSlides = pgTable("splash_slides", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   title: varchar("title", { length: 180 }).notNull(),
   subtitle: text("subtitle"),
   imageUrl: text("imageUrl").notNull(),
@@ -200,8 +200,8 @@ export const splashSlides = mysqlTable("splash_slides", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const reports = mysqlTable("reports", {
-  id: int("id").autoincrement().primaryKey(),
+export const reports = pgTable("reports", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   reporterId: int("reporterId").notNull(),
   targetType: reportTargetEnum("targetType").notNull(),
   targetId: int("targetId").notNull(),
@@ -215,8 +215,8 @@ export const reports = mysqlTable("reports", {
   reviewedAt: timestamp("reviewedAt"),
 });
 
-export const verificationRequests = mysqlTable("verification_requests", {
-  id: int("id").autoincrement().primaryKey(),
+export const verificationRequests = pgTable("verification_requests", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: int("userId").notNull(),
   idFrontUrl: text("idFrontUrl").notNull(),
   idBackUrl: text("idBackUrl").notNull(),
@@ -228,8 +228,8 @@ export const verificationRequests = mysqlTable("verification_requests", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const supportTickets = mysqlTable("support_tickets", {
-  id: int("id").autoincrement().primaryKey(),
+export const supportTickets = pgTable("support_tickets", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: int("userId").notNull(),
   subject: varchar("subject", { length: 180 }).notNull(),
   body: text("body").notNull(),
@@ -242,8 +242,8 @@ export const supportTickets = mysqlTable("support_tickets", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const stories = mysqlTable("stories", {
-  id: int("id").autoincrement().primaryKey(),
+export const stories = pgTable("stories", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   authorId: int("authorId").notNull(),
   mediaType: mediaTypeEnum("mediaType").notNull(),
   mediaUrl: text("mediaUrl").notNull(),
@@ -254,17 +254,17 @@ export const stories = mysqlTable("stories", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const storyInteractions = mysqlTable("story_interactions", {
-  id: int("id").autoincrement().primaryKey(),
+export const storyInteractions = pgTable("story_interactions", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   storyId: int("storyId").notNull(),
   userId: int("userId").notNull(),
-  kind: mysqlEnum("kind", ["view", "like", "comment"] as const).notNull(),
+  kind: pgEnum("story_interaction_kind", ["view", "like", "comment"])("kind").notNull(),
   body: text("body"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const creditLedger = mysqlTable("credit_ledger", {
-  id: int("id").autoincrement().primaryKey(),
+export const creditLedger = pgTable("credit_ledger", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: int("userId").notNull(),
   amount: int("amount").notNull(),
   kind: creditKindEnum("kind").notNull(),
@@ -273,8 +273,8 @@ export const creditLedger = mysqlTable("credit_ledger", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const payments = mysqlTable("payments", {
-  id: int("id").autoincrement().primaryKey(),
+export const payments = pgTable("payments", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: int("userId").notNull(),
   provider: varchar("provider", { length: 60 }).notNull(),
   providerPaymentId: varchar("providerPaymentId", { length: 180 }).unique(),
@@ -286,8 +286,8 @@ export const payments = mysqlTable("payments", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const subscriptions = mysqlTable("subscriptions", {
-  id: int("id").autoincrement().primaryKey(),
+export const subscriptions = pgTable("subscriptions", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: int("userId").notNull(),
   plan: subPlanEnum("plan").default("free").notNull(),
   status: subStatusEnum("status").default("active").notNull(),
@@ -295,16 +295,16 @@ export const subscriptions = mysqlTable("subscriptions", {
   endsAt: timestamp("endsAt"),
 });
 
-export const aiProviders = mysqlTable("ai_providers", {
-  id: int("id").autoincrement().primaryKey(),
+export const aiProviders = pgTable("ai_providers", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 120 }).notNull(),
   apiUrl: text("apiUrl"),
   isActive: int("isActive").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const aiModels = mysqlTable("ai_models", {
-  id: int("id").autoincrement().primaryKey(),
+export const aiModels = pgTable("ai_models", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   providerId: int("providerId").notNull(),
   name: varchar("name", { length: 120 }).notNull(),
   modelKey: varchar("modelKey", { length: 180 }).notNull(),
@@ -312,8 +312,8 @@ export const aiModels = mysqlTable("ai_models", {
   isActive: int("isActive").default(0).notNull(),
 });
 
-export const pricingPlans = mysqlTable("pricing_plans", {
-  id: int("id").autoincrement().primaryKey(),
+export const pricingPlans = pgTable("pricing_plans", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   code: varchar("code", { length: 60 }).notNull().unique(),
   name: varchar("name", { length: 120 }).notNull(),
   credits: int("credits").default(0).notNull(),
@@ -321,21 +321,30 @@ export const pricingPlans = mysqlTable("pricing_plans", {
   isActive: int("isActive").default(1).notNull(),
 });
 
-export const rewards = mysqlTable("rewards", {
-  id: int("id").autoincrement().primaryKey(),
+export const rewards = pgTable("rewards", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   userId: int("userId").notNull(),
   type: rewardTypeEnum("type").notNull(),
   amount: int("amount").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const adminAuditLogs = mysqlTable("admin_audit_logs", {
-  id: int("id").autoincrement().primaryKey(),
+export const adminAuditLogs = pgTable("admin_audit_logs", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
   adminId: int("adminId").notNull(),
   action: varchar("action", { length: 120 }).notNull(),
   entity: varchar("entity", { length: 80 }).notNull(),
   entityId: varchar("entityId", { length: 80 }),
   details: text("details"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const ratings = pgTable("ratings", {
+  id: int("id").primaryKey().generatedAlwaysAsIdentity(),
+  reviewerId: int("reviewerId").notNull(),
+  designerId: int("designerId").notNull(),
+  score: int("score").notNull(),
+  body: text("body"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -345,12 +354,3 @@ export type Post = typeof posts.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type PostShare = typeof postShares.$inferSelect;
-
-export const ratings = mysqlTable("ratings", {
-  id: int("id").autoincrement().primaryKey(),
-  reviewerId: int("reviewerId").notNull(),
-  designerId: int("designerId").notNull(),
-  score: int("score").notNull(),
-  body: text("body"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
